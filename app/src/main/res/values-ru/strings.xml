@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="listen_port_label">Порт для прослушивания</string>
+    <string name="listen_port_placeholder">Напр. 13255</string>
+    <string name="listen_port_hint">Локальный UDP порт, куда подключается WG клиент</string>
+    <string name="remote_host_label">Хост назначения</string>
+    <string name="remote_host_placeholder">example.com или 1.2.3.4</string>
+    <string name="remote_host_hint">Адрес удалённого обфускатора</string>
+    <string name="remote_port_label">Порт назначения</string>
+    <string name="remote_port_placeholder">Напр. 13249</string>
+    <string name="remote_port_hint">UDP порт удалённого обфускатора</string>
+    <string name="obfuscation_key_label">Ключ обфускации</string>
+    <string name="obfuscation_key_placeholder">любой текст</string>
+    <string name="obfuscation_key_hint">Должен совпадать с ключом на сервере</string>
+    <string name="status">Состояние</string>
+    <string name="enable_obfuscator">Включить обфускатор</string>
+    <string name="error">Ошибка</string>
+    <string name="status_not_running">Обфускатор не запущен</string>
+    <string name="status_obfuscator_started">Обфускатор запущен</string>
+    <string name="status_obfuscator_stopped">Обфускатор не запущен</string>
+    <string name="status_starting">Запускаемся…</string>
+</resources>

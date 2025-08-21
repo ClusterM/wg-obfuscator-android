@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name" translatable="false">WireGuard Obfuscator</string>
+    <string name="listen_port_label">Listening port</string>
+    <string name="listen_port_placeholder">E.g. 13255</string>
+    <string name="listen_port_hint">Local UDP port where the WG client connects</string>
+    <string name="remote_host_label">Destination host</string>
+    <string name="remote_host_placeholder">example.com or 1.2.3.4</string>
+    <string name="remote_host_hint">Address of the remote obfuscator</string>
+    <string name="remote_port_label">Destination port</string>
+    <string name="remote_port_placeholder">E.g. 13249</string>
+    <string name="remote_port_hint">Remote obfuscator UDP port</string>
+    <string name="obfuscation_key_label">Obfuscation key</string>
+    <string name="obfuscation_key_placeholder">any text</string>
+    <string name="obfuscation_key_hint">Must match the key on the server</string>
+    <string name="status">Status</string>
+    <string name="enable_obfuscator">Enable obfuscator</string>
+    <string name="error">Error</string>
+    <string name="default_listen_port" translatable="false">13255</string>
+    <string name="default_remote_host" translatable="false">example.com</string>
+    <string name="default_remote_port" translatable="false">13255</string>
+    <string name="default_obfuscation_key" translatable="false">test</string>
+    <string name="status_not_running">Obfuscator not running</string>
+    <string name="status_obfuscator_started">Obfuscator started</string>
+    <string name="status_obfuscator_stopped">Obfuscator stopped</string>
+    <string name="status_starting">Starting…</string>
+</resources>
