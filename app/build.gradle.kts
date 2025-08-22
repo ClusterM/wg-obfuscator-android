@@ -18,8 +18,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -61,6 +59,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.material3)
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.datastore.preferences)

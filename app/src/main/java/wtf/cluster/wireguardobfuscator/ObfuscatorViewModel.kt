@@ -57,7 +57,7 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun saveValue(key: Preferences.Key<String>, value: String) {
-        Log.d(Obfuscator.TAG, "Value '$key' changed to '$value'");
+        Log.d(Obfuscator.TAG, "Value '$key' changed to '$value'")
         viewModelScope.launch {
             dataStore.edit { prefs ->
                 prefs[key] = value
@@ -66,7 +66,7 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun saveValue(key: Preferences.Key<Boolean>, value: Boolean) {
-        Log.d(Obfuscator.TAG, "Value '$key' changed to '$value'");
+        Log.d(Obfuscator.TAG, "Value '$key' changed to '$value'")
             viewModelScope.launch {
             dataStore.edit { prefs ->
                 prefs[key] = value
@@ -83,10 +83,11 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
             putExtra(SettingsKeys.REMOTE_PORT.toString(), state.remotePort)
             putExtra(SettingsKeys.OBFUSCATION_KEY.toString(), state.obfuscationKey)
         }
+        Log.d(Obfuscator.TAG, "starting service with $intent, listenPost=${state.listenPort}, remoteHost=${state.remoteHost}, remotePort=${state.remotePort}, obfuscationKey=${state.obfuscationKey}")
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            context.startForegroundService(intent);
+            context.startForegroundService(intent)
         } else {
-            context.startService(intent);
+            context.startService(intent)
         }
     }
 

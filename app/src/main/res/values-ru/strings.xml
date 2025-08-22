@@ -19,4 +19,7 @@
     <string name="status_obfuscator_started">Обфускатор запущен</string>
     <string name="status_obfuscator_stopped">Обфускатор не запущен</string>
     <string name="status_starting">Запускаемся…</string>
+    <string name="allow_notification">Разрешить уведомление</string>
+    <string name="allow_disable_battery_optimization">Отключить уход в сон</string>
+    <string name="notification_channel_name">Состояние</string>
 </resources>

@@ -1,18 +1,15 @@
 package wtf.cluster.wireguardobfuscator
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -107,7 +104,7 @@ class ObfuscatorService : Service() {
             Log.d(Obfuscator.TAG, "createNotificationChannel")
             val channel = NotificationChannel(
                 channelId,
-                getString(R.string.app_name),
+                getString(R.string.notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -156,7 +153,7 @@ class ObfuscatorService : Service() {
                         clientPort = packet.port
                         // Obfuscation
                         packet.length = obfuscator.encode(packet.data, packet.length)
-                        // Пересылаем на сервер
+                        // Send to server
                         val outPacket =
                             DatagramPacket(packet.data, packet.length, remoteAddress, remotePort)
                         remoteSocket!!.send(outPacket)
@@ -209,7 +206,7 @@ class ObfuscatorService : Service() {
                 }
                 Log.d(Obfuscator.TAG, "Server thread stopped")
             }
-        } catch (e: CancellationException) {
+        } catch (_: CancellationException) {
             Log.d(Obfuscator.TAG, "runProxy: cancelled")
         } catch (e: Exception) {
             error(e)

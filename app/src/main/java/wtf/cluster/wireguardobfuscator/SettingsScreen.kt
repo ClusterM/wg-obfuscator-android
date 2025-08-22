@@ -1,6 +1,11 @@
 package wtf.cluster.wireguardobfuscator
 
+import android.app.Activity
+import android.content.Intent
 import android.content.res.Configuration
+import android.os.Build
+import android.provider.Settings
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +21,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -34,8 +38,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.size
-import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -85,13 +95,7 @@ fun SettingsContent(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                )
-            )
+            MyTopAppBar()
         },
         contentWindowInsets = WindowInsets.ime
     ) { innerPadding ->
@@ -132,6 +136,58 @@ fun SettingsContent(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyTopAppBar() {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    val (noOptimizationGranted, _) = PermissionHelpers.RememberBatteryOptimizationState()
+
+    TopAppBar(
+        title = { Text(text = stringResource(R.string.app_name)) },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+        actions = {
+            IconButton(onClick = { menuExpanded = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false }
+            ) {
+                // Request POST_NOTIFICATIONS (API 33+)
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.allow_notification)) },
+                    enabled = true,
+                    onClick = {
+                        menuExpanded = false
+                        Log.d(Obfuscator.TAG, "Requesting notification permission")
+                        //requestNotifications()
+                        val notificationSettingsIntent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        if (activity == null) notificationSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(notificationSettingsIntent)
+                    }
+                )
+                // Request ignore battery optimizations (API 23+)
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.allow_disable_battery_optimization)) },
+                    enabled = !noOptimizationGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M,
+                    onClick = {
+                        menuExpanded = false
+                        Log.d(Obfuscator.TAG, "Requesting ignore battery optimization")
+                        PermissionHelpers.OpenIgnoreBatteryOptimizationRequest(context)
+                    }
+                )
+            }
+        }
+    )
 }
 
 @Composable
