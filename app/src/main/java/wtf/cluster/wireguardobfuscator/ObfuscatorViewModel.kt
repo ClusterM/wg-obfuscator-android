@@ -24,7 +24,7 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
                 _uiState.value = oldState.copy(
                     isRunning = prefs[SettingsKeys.STARTED] ?: oldState.isRunning,
                     status = prefs[SettingsKeys.STATUS] ?: oldState.status,
-                    error = prefs[SettingsKeys.ERROR] ?: oldState.status,
+                    error = prefs[SettingsKeys.ERROR] ?: oldState.error,
                 )
             }
         }

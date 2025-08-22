@@ -1,6 +1,7 @@
 package wtf.cluster.wireguardobfuscator
 
-import android.app.Activity
+import android.app.UiModeManager
+import android.content.Context.UI_MODE_SERVICE
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
@@ -143,7 +144,7 @@ fun SettingsContent(
 fun MyTopAppBar() {
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val activity = context as? Activity
+    val uiModeManager = context.getSystemService(UI_MODE_SERVICE) as UiModeManager
 
     val (noOptimizationGranted, _) = PermissionHelpers.RememberBatteryOptimizationState()
 
@@ -154,6 +155,9 @@ fun MyTopAppBar() {
             titleContentColor = MaterialTheme.colorScheme.onPrimary,
         ),
         actions = {
+            if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
+                return@TopAppBar
+            }
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(Icons.Default.MoreVert, contentDescription = "Menu")
             }
@@ -168,10 +172,8 @@ fun MyTopAppBar() {
                     onClick = {
                         menuExpanded = false
                         Log.d(Obfuscator.TAG, "Requesting notification permission")
-                        //requestNotifications()
                         val notificationSettingsIntent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                        if (activity == null) notificationSettingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(notificationSettingsIntent)
                     }
                 )

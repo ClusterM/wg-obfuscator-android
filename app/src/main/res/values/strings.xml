@@ -23,7 +23,7 @@
     <string name="status_obfuscator_started">Obfuscator started</string>
     <string name="status_obfuscator_stopped">Obfuscator stopped</string>
     <string name="status_starting">Starting…</string>
-    <string name="allow_notification">Allow status notification</string>
+    <string name="allow_notification">Enable/disable status notification</string>
     <string name="allow_disable_battery_optimization">Disable battery optimization</string>
     <string name="notification_channel_name">Status</string>
 </resources>

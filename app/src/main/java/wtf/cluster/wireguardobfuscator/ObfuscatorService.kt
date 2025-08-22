@@ -222,7 +222,7 @@ class ObfuscatorService : Service() {
     }
 
     private fun error(e: Exception) {
-        setError(e.toString())
+        setError(e.message)
         Log.e(Obfuscator.TAG, "Error: " + e.printStackTrace())
         stop()
         stopSelf()

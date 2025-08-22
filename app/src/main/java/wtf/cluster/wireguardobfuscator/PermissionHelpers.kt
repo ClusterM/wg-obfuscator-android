@@ -35,7 +35,7 @@ class PermissionHelpers() {
             val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                 data = Uri.parse("package:$pkg")
                 addCategory(Intent.CATEGORY_DEFAULT)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // reliability across OEMs
+                //addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // reliability across OEMs
             }
             try {
                 if (direct.resolveActivity(pm) != null) {
@@ -49,7 +49,7 @@ class PermissionHelpers() {
             // 2) Fallback: list of apps
             val list = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
                 addCategory(Intent.CATEGORY_DEFAULT)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                //addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             try {
                 if (list.resolveActivity(pm) != null) {
@@ -63,7 +63,7 @@ class PermissionHelpers() {
             // 3) Last resort: app details
             val details = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.fromParts("package", pkg, null)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                //addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             try {
                 Log.d(Obfuscator.TAG, "BatteryOpt: app details")
