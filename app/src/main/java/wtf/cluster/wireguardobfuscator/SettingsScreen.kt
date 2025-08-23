@@ -155,7 +155,7 @@ fun MyTopAppBar() {
             titleContentColor = MaterialTheme.colorScheme.onPrimary,
         ),
         actions = {
-            if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
+            if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
                 return@TopAppBar
             }
             IconButton(onClick = { menuExpanded = true }) {
@@ -343,19 +343,42 @@ fun ControlAndStatus(
         )
     }
 
-    Text(
-        text = "${stringResource(R.string.status)}: ${state.status}",
-        style = MaterialTheme.typography.bodyLarge
-    )
+    Row(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "${stringResource(R.string.status)}: ",
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Text(
+            text = state.status,
+            modifier = Modifier.weight(1f),
+            softWrap = true,
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
 
     if (state.error.isNotEmpty()) {
-        Text(
-            text = "${stringResource(R.string.error)}: ${state.error}",
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Bold
-            ),
-            color = MaterialTheme.colorScheme.error
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "${stringResource(R.string.error)}: ",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.error
+            )
+            Text(
+                text = state.error,
+                modifier = Modifier.weight(1f),
+                softWrap = true,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
     }
 }
 
@@ -450,7 +473,7 @@ fun SettingsScreenPreviewOn() {
         remotePort = "13249",
         obfuscationKey = "secret123",
         isRunning = true,
-        status = "Работает",
+        status = "Waiting for answer from server... from server... from server... from server... so long string",
         error = "Пизда"
     )
     WireguardObfuscatorTheme {
@@ -475,7 +498,7 @@ fun SettingsScreenPreviewOff() {
         remotePort = "13249",
         obfuscationKey = "secret123",
         isRunning = false,
-        status = "Работает",
+        status = "Waiting for answer from server... from server... from server... from server... so long string",
         error = "Пизда"
     )
     WireguardObfuscatorTheme {
@@ -500,7 +523,7 @@ fun SettingsScreenPreviewLoading() {
         remotePort = "13249",
         obfuscationKey = "secret123",
         isRunning = false,
-        status = "Работает",
+        status = "Waiting for answer from server... from server... from server... from server... so long string",
         error = "Пизда"
     )
     WireguardObfuscatorTheme {

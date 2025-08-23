@@ -22,4 +22,7 @@
     <string name="allow_notification">Включить/выключить уведомление</string>
     <string name="allow_disable_battery_optimization">Отключить оптимизацию расхода батареи</string>
     <string name="notification_channel_name">Состояние</string>
+    <string name="status_waiting_for_handshake">Ожидаем клиента…</string>
+    <string name="status_handshake_sent_waiting_for_response">Ожидаем ответа от сервера…</string>
+    <string name="status_handshake_completed">Соединение установлено</string>
 </resources>

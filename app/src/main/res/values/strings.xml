@@ -26,4 +26,7 @@
     <string name="allow_notification">Enable/disable status notification</string>
     <string name="allow_disable_battery_optimization">Disable battery optimization</string>
     <string name="notification_channel_name">Status</string>
+    <string name="status_waiting_for_handshake">Waiting for client...</string>
+    <string name="status_handshake_sent_waiting_for_response">Waiting for server...</string>
+    <string name="status_handshake_completed">Connected</string>
 </resources>

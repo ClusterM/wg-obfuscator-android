@@ -41,7 +41,7 @@ class ObfuscatorService : Service() {
         Log.d(Obfuscator.TAG, "service, onStartCommand")
 
         if (started) {
-            Log.w(Obfuscator.TAG, "already running, exit")
+            Log.d(Obfuscator.TAG, "already running, exit")
             return START_STICKY
         }
 
@@ -136,8 +136,11 @@ class ObfuscatorService : Service() {
             var clientAddress: InetAddress? = null
             var clientPort: Int? = null
             val obfuscator = Obfuscator(key)
+            var handshakeSent = false
+            var handshakeResponded = false
 
-            setStatus(getString(R.string.status_obfuscator_started))
+            //setStatus(getString(R.string.status_obfuscator_started))
+            setStatus(getString(R.string.status_waiting_for_handshake))
 
             // Listen for client
             launch {
@@ -148,16 +151,37 @@ class ObfuscatorService : Service() {
                     try {
                         val packet = DatagramPacket(buffer, buffer.size)
                         listenSocket!!.receive(packet)
-                        Log.d(Obfuscator.TAG, "Received " + packet.length + " from client")
-                        clientAddress = packet.address
-                        clientPort = packet.port
+                        //Log.d(Obfuscator.TAG, "Received " + packet.length + " from client ${packet.address}:${packet.port}")
+                        if (packet.length < 4) {
+                            Log.w(Obfuscator.TAG, "Received packet from ${packet.address}:${packet.port} is too short: ${packet.length}")
+                            continue
+                        }
+                        val packetType = Obfuscator.wgType(packet.data)
+                        if (packetType !in Obfuscator.WG_TYPE_HANDSHAKE..Obfuscator.WG_TYPE_DATA) {
+                            Log.w(Obfuscator.TAG, "Received unknown packet from ${packet.address}:${packet.port}, type: $packetType")
+                            continue
+                        }
                         // Obfuscation
                         packet.length = obfuscator.encode(packet.data, packet.length)
+                        // Update client's port if need
+                        if (clientAddress != packet.address || clientPort != packet.port) {
+                            Log.i(Obfuscator.TAG, "Client address/port updated to ${packet.address}:${packet.port}")
+                            clientAddress = packet.address
+                            clientPort = packet.port
+                            handshakeSent = false
+                            handshakeResponded = false
+                            setStatus(getString(R.string.status_waiting_for_handshake))
+                        }
                         // Send to server
                         val outPacket =
                             DatagramPacket(packet.data, packet.length, remoteAddress, remotePort)
                         remoteSocket!!.send(outPacket)
-                        Log.d(Obfuscator.TAG, "Sent " + packet.length + " to server")
+                        //Log.d(Obfuscator.TAG, "Sent " + packet.length + " to server ${remoteAddress}:${remotePort}")
+                        if (packetType == Obfuscator.WG_TYPE_HANDSHAKE && !handshakeSent) {
+                            handshakeSent = true
+                            Log.d(Obfuscator.TAG, "Sent handshake to server ${remoteAddress}:${remotePort}")
+                            setStatus(getString(R.string.status_handshake_sent_waiting_for_response))
+                        }
                     } catch (e: java.net.SocketException) {
                         if (!isActive) {
                             Log.d(Obfuscator.TAG, "Stopping client thread")
@@ -180,20 +204,46 @@ class ObfuscatorService : Service() {
                     try {
                         val respPacket = DatagramPacket(buffer, buffer.size)
                         remoteSocket!!.receive(respPacket)
-                        Log.d(Obfuscator.TAG, "Received " + respPacket.length + " from server")
-                        if (clientAddress != null && clientPort != null) {
-                            // Deobfuscation
-                            respPacket.length = obfuscator.decode(respPacket.data, respPacket.length)
-                            // Sending back
-                            val backPacket = DatagramPacket(
-                                respPacket.data,
-                                respPacket.length,
-                                clientAddress,
-                                clientPort
-                            )
-                            listenSocket!!.send(backPacket)
-                            Log.d(Obfuscator.TAG, "Sent " + respPacket.length + " to client")
+                        //Log.d(Obfuscator.TAG, "Received ${respPacket.length} from server ${respPacket.address}:${respPacket.port}")
+                        if (respPacket.address != remoteAddress || respPacket.port != remotePort) {
+                            Log.w(Obfuscator.TAG, "Received packet from unexpected server ${respPacket.address}:${respPacket.port}, dropping")
+                            continue
                         }
+                        if (clientAddress == null || clientPort == null) {
+                            // Nearly impossible case, but who knows
+                            Log.w(Obfuscator.TAG, "Client address/port not known yet, dropping packet")
+                            continue
+                        }
+                        if (respPacket.length < 4) {
+                            Log.w(Obfuscator.TAG, "Received packet from ${respPacket.address}:${respPacket.port} is too short: ${respPacket.length}")
+                            continue
+                        }
+                        // Deobfuscation
+                        val newLength = obfuscator.decode(respPacket.data, respPacket.length)
+                        if (newLength < 4) {
+                            Log.w(Obfuscator.TAG, "Failed to decode packet from ${respPacket.address}:${respPacket.port}, (original_length=${respPacket.length}, decoded_length=$newLength)")
+                            continue
+                        }
+                        respPacket.length = newLength
+                        val packetType = Obfuscator.wgType(respPacket.data)
+                        if (packetType !in Obfuscator.WG_TYPE_HANDSHAKE..Obfuscator.WG_TYPE_DATA) {
+                            Log.w(Obfuscator.TAG, "Decoded unknown packet from ${respPacket.address}:${respPacket.port}, type: $packetType")
+                            continue
+                        }
+                        if (packetType == Obfuscator.WG_TYPE_HANDSHAKE_RESP && !handshakeResponded && handshakeSent) {
+                            handshakeResponded = true
+                            Log.d(Obfuscator.TAG, "Received handshake response from server ${respPacket.address}:${respPacket.port}")
+                            setStatus(getString(R.string.status_handshake_completed))
+                        }
+                        // Sending back
+                        val backPacket = DatagramPacket(
+                            respPacket.data,
+                            respPacket.length,
+                            clientAddress,
+                            clientPort
+                        )
+                        listenSocket!!.send(backPacket)
+                        //Log.d(Obfuscator.TAG, "Sent " + respPacket.length + " to client ${clientAddress}:${clientPort}")
                     } catch (e: java.net.SocketException) {
                         if (!isActive) {
                             Log.d(Obfuscator.TAG, "Stopping server thread")
