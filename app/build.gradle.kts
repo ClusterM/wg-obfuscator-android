@@ -34,7 +34,7 @@ android {
             val formattedDate = SimpleDateFormat("yyMMdd-HHmmss").format(Date())
             val versionCodeVal = defaultConfig.versionCode ?: 1
             if (this is ApkVariantOutputImpl) {
-                this.outputFileName = "wg-obfuscator-v${versionCodeVal}-${formattedDate}.apk"
+                this.outputFileName = "wg-obfuscator-v${versionCodeVal}-${name}-${formattedDate}.apk"
             }
         }
     }
