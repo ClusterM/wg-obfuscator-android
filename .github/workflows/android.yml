@@ -57,6 +57,7 @@ jobs:
           path: app/build/outputs/apk/release
 
   upload-to-pages:
+    name: Upload to GitHub Pages
     needs: [build]
     runs-on: ubuntu-latest
     steps:
@@ -67,7 +68,7 @@ jobs:
     - name: Remove unused directories
       run: rm -rf release-apk debug-apk
     - name: Generate index.html
-      run: "(echo \"<html><head><title>WireGuard Obfuscator</title></head><body><h1>WireGuard Obfuscator for Android</h1>This is automatic interim builds. Install those apk's only if you want to test some unreleased features. Can be buggy, not signed.<br/><br/>Updated: `date`<br/><br/>\" ; for file in *.apk ; do echo \"<a href='$file'>$file</a><br/>\" ; done ; echo \"</body></html>\") > index.html"
+      run: "(echo \"<html><head><title>WireGuard Obfuscator</title></head><body><h1>WireGuard Obfuscator for Android</h1>This is automatic interim builds. Can be buggy, not signed.<br/><br/>Updated: `date`<br/><br/>\" ; for file in *.apk ; do echo \"<a href='$file'>$file</a><br/>\" ; done ; echo \"</body></html>\") > index.html"
     - name: Setup Pages
       uses: actions/configure-pages@v5
     - name: Upload artifact
