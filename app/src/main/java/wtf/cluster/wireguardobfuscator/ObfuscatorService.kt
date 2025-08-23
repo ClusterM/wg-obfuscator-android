@@ -1,5 +1,6 @@
 package wtf.cluster.wireguardobfuscator
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.net.DatagramPacket
@@ -112,7 +114,7 @@ class ObfuscatorService : Service() {
         }
     }
 
-    private fun createNotification(status: String): Notification {
+    private fun createNotification(status: String, subStatus: String? = null): Notification {
         val notifyIntent = Intent(this, MainActivity::class.java)
         val notifyPendingIntent = PendingIntent.getActivity(
             this, 0, notifyIntent,
@@ -120,6 +122,7 @@ class ObfuscatorService : Service() {
         )
         val notification = Notification.Builder(this, channelId)
             .setContentTitle(status)
+            .setContentText(subStatus)
             .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
             .setContentIntent(notifyPendingIntent)
@@ -138,9 +141,34 @@ class ObfuscatorService : Service() {
             val obfuscator = Obfuscator(key)
             var handshakeSent = false
             var handshakeResponded = false
+            var tx: Long = 0
+            var rx: Long = 0
 
-            //setStatus(getString(R.string.status_obfuscator_started))
-            setStatus(getString(R.string.status_waiting_for_handshake))
+            fun updateStatusWithStats() {
+                if (!handshakeSent) {
+                    setStatus(getString(R.string.status_waiting_for_handshake))
+                }
+                else if (!handshakeResponded) {
+                    setStatus(getString(R.string.status_handshake_sent_waiting_for_response))
+                } else {
+                    @SuppressLint("DefaultLocale")
+                    fun formatBytes(bytes: Long): String {
+                        val units = arrayOf("B", "KiB", "MiB", "GiB", "TiB")
+                        var value = bytes.toDouble()
+                        var unitIndex = 0
+                        while (value >= 1024 && unitIndex < units.size - 1) {
+                            value /= 1024
+                            unitIndex++
+                        }
+                        return String.format("%.2f %s", value, units[unitIndex])
+                    }
+                    val txStr = formatBytes(tx)
+                    val rxStr = formatBytes(rx)
+                    setStatus(getString(R.string.status_handshake_completed), "TX: $txStr\nRX: $rxStr")
+                }
+            }
+
+            updateStatusWithStats()
 
             // Listen for client
             launch {
@@ -170,17 +198,18 @@ class ObfuscatorService : Service() {
                             clientPort = packet.port
                             handshakeSent = false
                             handshakeResponded = false
-                            setStatus(getString(R.string.status_waiting_for_handshake))
+                            updateStatusWithStats()
                         }
                         // Send to server
                         val outPacket =
                             DatagramPacket(packet.data, packet.length, remoteAddress, remotePort)
                         remoteSocket!!.send(outPacket)
+                        tx += packet.length
                         //Log.d(Obfuscator.TAG, "Sent " + packet.length + " to server ${remoteAddress}:${remotePort}")
                         if (packetType == Obfuscator.WG_TYPE_HANDSHAKE && !handshakeSent) {
                             handshakeSent = true
                             Log.d(Obfuscator.TAG, "Sent handshake to server ${remoteAddress}:${remotePort}")
-                            setStatus(getString(R.string.status_handshake_sent_waiting_for_response))
+                            updateStatusWithStats()
                         }
                     } catch (e: java.net.SocketException) {
                         if (!isActive) {
@@ -214,6 +243,7 @@ class ObfuscatorService : Service() {
                             Log.w(Obfuscator.TAG, "Client address/port not known yet, dropping packet")
                             continue
                         }
+                        rx += respPacket.length
                         if (respPacket.length < 4) {
                             Log.w(Obfuscator.TAG, "Received packet from ${respPacket.address}:${respPacket.port} is too short: ${respPacket.length}")
                             continue
@@ -233,7 +263,7 @@ class ObfuscatorService : Service() {
                         if (packetType == Obfuscator.WG_TYPE_HANDSHAKE_RESP && !handshakeResponded && handshakeSent) {
                             handshakeResponded = true
                             Log.d(Obfuscator.TAG, "Received handshake response from server ${respPacket.address}:${respPacket.port}")
-                            setStatus(getString(R.string.status_handshake_completed))
+                            updateStatusWithStats()
                         }
                         // Sending back
                         val backPacket = DatagramPacket(
@@ -255,6 +285,18 @@ class ObfuscatorService : Service() {
                     }
                 }
                 Log.d(Obfuscator.TAG, "Server thread stopped")
+            }
+
+            // Update status
+            launch {
+                while (isActive) {
+                    try {
+                        delay(5000)
+                        updateStatusWithStats()
+                    } catch (_: CancellationException) {
+                        break
+                    }
+                }
             }
         } catch (_: CancellationException) {
             Log.d(Obfuscator.TAG, "runProxy: cancelled")
@@ -278,16 +320,16 @@ class ObfuscatorService : Service() {
         stopSelf()
     }
 
-    private fun setStatus(status: String) {
-        Log.d(Obfuscator.TAG, "service, setStatus: $status")
+    private fun setStatus(status: String, subStatus: String? = null) {
+        Log.d(Obfuscator.TAG, "service, setStatus: $status ($subStatus)")
         if (started) {
-            val notification = createNotification(status)
+            val notification = createNotification(status, subStatus)
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(notificationId, notification)
         }
         CoroutineScope(Dispatchers.IO).launch {
             dataStore.edit { prefs ->
-                prefs[SettingsKeys.STATUS] = status
+                prefs[SettingsKeys.STATUS] = if (subStatus == null) status else "$status\n$subStatus"
             }
         }
     }
