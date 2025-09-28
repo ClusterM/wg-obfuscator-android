@@ -29,4 +29,8 @@
     <string name="status_waiting_for_handshake">Waiting for client...</string>
     <string name="status_handshake_sent_waiting_for_response">Waiting for server...</string>
     <string name="status_handshake_completed">Connected</string>
+    <string name="masking_none">No masking</string>
+    <string name="masking_stun" translatable="false">STUN</string>
+    <string name="masking_type_label">Masking type</string>
+    <string name="masking_type_hint">The protocol we are masking as</string>
 </resources>

@@ -17,6 +17,7 @@ object SettingsKeys {
     val REMOTE_HOST = stringPreferencesKey("remote_host")
     val REMOTE_PORT = stringPreferencesKey("remote_port")
     val OBFUSCATION_KEY = stringPreferencesKey("key")
+    val MASKING_TYPE = stringPreferencesKey("masking_type")
     val STARTED = booleanPreferencesKey("started")
     val STATUS = stringPreferencesKey("status")
     val ERROR = stringPreferencesKey("error")

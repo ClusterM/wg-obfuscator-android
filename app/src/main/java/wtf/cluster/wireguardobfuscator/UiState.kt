@@ -6,6 +6,7 @@ data class UiState(
     val remoteHost: String = "",
     val remotePort: String = "",
     val obfuscationKey: String = "",
+    val maskingType: Masking.MaskingType = Masking.all()[0],
     val isRunning: Boolean = false,
     val status: String = "",
     val error: String = "",

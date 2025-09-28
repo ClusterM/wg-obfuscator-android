@@ -33,6 +33,12 @@ class ObfuscatorService : Service() {
     private var listenSocket: DatagramSocket? = null
     private var remoteSocket: DatagramSocket? = null
 
+    enum class PacketDirection
+    {
+        ClientToServer,
+        ServerToClient
+    }
+
     override fun onCreate() {
         super.onCreate()
         Log.d(Obfuscator.TAG, "service, onCreate")
@@ -73,11 +79,12 @@ class ObfuscatorService : Service() {
             val keyStr = intent.getStringExtra(SettingsKeys.OBFUSCATION_KEY.toString())
                 ?: throw Exception("Obfuscation key not specified")
             val key = keyStr.toByteArray(Charsets.UTF_8)
+            val maskerTypeId = intent.getStringExtra(SettingsKeys.MASKING_TYPE.toString()) ?: Masking.all()[0].id
 
             stop() // in case if already running
             proxyJob = CoroutineScope(Dispatchers.IO).launch {
                 Log.d(Obfuscator.TAG, "service, starting runProxy")
-                runProxy(listenPort, remoteHost, remotePort, key)
+                runProxy(listenPort, remoteHost, remotePort, key, maskerTypeId)
             }
         } catch (e: Exception) {
             error(e)
@@ -130,7 +137,7 @@ class ObfuscatorService : Service() {
         return notification
     }
 
-    private suspend fun runProxy(listenPort: Int, remoteHost: String, remotePort: Int, key: ByteArray) = coroutineScope {
+    private suspend fun runProxy(listenPort: Int, remoteHost: String, remotePort: Int, key: ByteArray, maskerTypeId: String) = coroutineScope {
         Log.d(Obfuscator.TAG, "service, runProxy")
         try {
             listenSocket = DatagramSocket(InetSocketAddress(InetAddress.getByName("127.0.0.1"), listenPort))
@@ -143,6 +150,9 @@ class ObfuscatorService : Service() {
             var handshakeResponded = false
             var tx: Long = 0
             var rx: Long = 0
+            var masker: Masker? = null
+
+            masker = Masking.createMasker(maskerTypeId)
 
             fun updateStatusWithStats() {
                 if (!handshakeSent) {
@@ -169,6 +179,24 @@ class ObfuscatorService : Service() {
             }
 
             updateStatusWithStats()
+
+            fun sendToClient(data: ByteArray, length: Int): Int {
+                val backPacket = DatagramPacket(
+                    data,
+                    length,
+                    clientAddress,
+                    clientPort!!
+                )
+                listenSocket!!.send(backPacket)
+                return length
+            }
+
+            fun sendToServer(data: ByteArray, length: Int): Int {
+                val outPacket =
+                    DatagramPacket(data, length, remoteAddress, remotePort)
+                remoteSocket!!.send(outPacket)
+                return length
+            }
 
             // Listen for client
             launch {
@@ -200,11 +228,25 @@ class ObfuscatorService : Service() {
                             handshakeResponded = false
                             updateStatusWithStats()
                         }
+                        // Masking
+                        if (masker != null) {
+                            if (packetType == Obfuscator.WG_TYPE_HANDSHAKE) {
+                                masker.onHandshakeRequest(
+                                    PacketDirection.ClientToServer,
+                                    clientAddress,
+                                    clientPort,
+                                    remoteAddress,
+                                    remotePort,
+                                    ::sendToClient,
+                                    ::sendToServer
+                                )
+                            }
+
+                            packet.length = masker.onDataWrap(packet.data, packet.length, clientAddress, clientPort, remoteAddress, remotePort, ::sendToClient, ::sendToServer)
+                        }
+
                         // Send to server
-                        val outPacket =
-                            DatagramPacket(packet.data, packet.length, remoteAddress, remotePort)
-                        remoteSocket!!.send(outPacket)
-                        tx += packet.length
+                        tx += sendToServer(packet.data, packet.length)
                         //Log.d(Obfuscator.TAG, "Sent " + packet.length + " to server ${remoteAddress}:${remotePort}")
                         if (packetType == Obfuscator.WG_TYPE_HANDSHAKE && !handshakeSent) {
                             handshakeSent = true
@@ -244,6 +286,14 @@ class ObfuscatorService : Service() {
                             continue
                         }
                         rx += respPacket.length
+                        // Masking
+                        if (masker != null) {
+                            respPacket.length = masker.onDataUnwrap(respPacket.data, respPacket.length, remoteAddress, remotePort, clientAddress, clientPort, ::sendToServer, ::sendToClient)
+                            if (respPacket.length <= 0) {
+                                // Nothing to do
+                                continue
+                            }
+                        }
                         if (respPacket.length < 4) {
                             Log.w(Obfuscator.TAG, "Received packet from ${respPacket.address}:${respPacket.port} is too short: ${respPacket.length}")
                             continue
@@ -266,13 +316,7 @@ class ObfuscatorService : Service() {
                             updateStatusWithStats()
                         }
                         // Sending back
-                        val backPacket = DatagramPacket(
-                            respPacket.data,
-                            respPacket.length,
-                            clientAddress,
-                            clientPort
-                        )
-                        listenSocket!!.send(backPacket)
+                        sendToClient(respPacket.data, respPacket.length)
                         //Log.d(Obfuscator.TAG, "Sent " + respPacket.length + " to client ${clientAddress}:${clientPort}")
                     } catch (e: java.net.SocketException) {
                         if (!isActive) {
@@ -295,6 +339,31 @@ class ObfuscatorService : Service() {
                         updateStatusWithStats()
                     } catch (_: CancellationException) {
                         break
+                    }
+                }
+            }
+
+            // Masking timer
+            if (masker?.timerInterval != null) {
+                launch {
+                    while (isActive) {
+                        delay(masker.timerInterval!!)
+                        if (clientAddress != null && clientPort != null) {
+                            try {
+                                masker.onTimer(
+                                    clientAddress,
+                                    clientPort,
+                                    remoteAddress,
+                                    remotePort,
+                                    ::sendToClient,
+                                    ::sendToServer
+                                )
+                            } catch (_: CancellationException) {
+                                break
+                            } catch (e: Exception) {
+                                Log.e(Obfuscator.TAG, "Masking timer error: " + e.printStackTrace())
+                            }
+                        }
                     }
                 }
             }

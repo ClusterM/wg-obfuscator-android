@@ -43,9 +43,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +62,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import wtf.cluster.wireguardobfuscator.Masking.MaskingType
 import wtf.cluster.wireguardobfuscator.ui.theme.WireguardObfuscatorTheme
 
 @Composable
@@ -75,6 +80,7 @@ fun SettingsScreen(vm: ObfuscatorViewModel = viewModel()) {
         onRemoteHostChange = vm::onRemoteHostChange,
         onRemotePortChange = vm::onRemotePortChange,
         onObfuscationKeyChange = vm::onObfuscationKeyChange,
+        onMaskingTypeChange = vm::onMaskingTypeChange,
         onEnableToggle = { checked ->
             vm.onEnableToggle(checked)
             if (checked) vm.startObfuscator(context) else vm.stopObfuscator(context)
@@ -90,6 +96,7 @@ fun SettingsContent(
     onRemoteHostChange: (String) -> Unit,
     onRemotePortChange: (String) -> Unit,
     onObfuscationKeyChange: (String) -> Unit,
+    onMaskingTypeChange: (MaskingType) -> Unit,
     onEnableToggle: (Boolean) -> Unit
 ) {
     val scroll = rememberScrollState()
@@ -119,7 +126,8 @@ fun SettingsContent(
                         onRemoteHostChange = onRemoteHostChange,
                         onRemotePortChange = onRemotePortChange,
                         onObfuscationKeyChange = onObfuscationKeyChange,
-                        onEnableToggle = onEnableToggle
+                        onEnableToggle = onEnableToggle,
+                        onMaskingTypeChange = onMaskingTypeChange,
                     )
                 }
             } else {
@@ -199,6 +207,7 @@ fun ProxySettingsContentCore(
     onRemoteHostChange: (String) -> Unit,
     onRemotePortChange: (String) -> Unit,
     onObfuscationKeyChange: (String) -> Unit,
+    onMaskingTypeChange: (MaskingType) -> Unit,
     onEnableToggle: (Boolean) -> Unit
 ) {
     val conf = LocalConfiguration.current
@@ -231,6 +240,7 @@ fun ProxySettingsContentCore(
                     ) {
                         ListenPort(state, onListenPortChange)
                         RemoteHost(state, onRemoteHostChange)
+                        MaskingType(state, onMaskingTypeChange)
                     }
                     Column(
                         modifier = Modifier.weight(1f),
@@ -246,6 +256,7 @@ fun ProxySettingsContentCore(
                 RemoteHost(state, onRemoteHostChange)
                 RemotePort(state, onRemotePortChange)
                 ObfuscationKey(state, onObfuscationKeyChange)
+                MaskingType(state, onMaskingTypeChange)
             }
 
             HorizontalDivider()
@@ -320,6 +331,23 @@ fun ObfuscationKey(
             enabled = !state.isRunning
         )
         Hint(state, stringResource(R.string.obfuscation_key_hint))
+    }
+}
+
+@Composable
+fun MaskingType(
+    state: UiState,
+    onMaskingTypeChange: (MaskingType) -> Unit
+) {
+    Column {
+        DropdownMasking(
+            value = state.maskingType,
+            onChange = onMaskingTypeChange,
+            label = stringResource(R.string.masking_type_label),
+            options = Masking.all(),
+            enabled = !state.isRunning
+        )
+        Hint(state, stringResource(R.string.masking_type_hint))
     }
 }
 
@@ -433,6 +461,52 @@ private fun TextFieldBasic(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DropdownMasking(
+    value: MaskingType,
+    onChange: (MaskingType) -> Unit,
+    label: String,
+    options: List<MaskingType>,
+    enabled: Boolean
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { if (enabled) expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = stringResource(value.labelRes),
+            onValueChange = {}, // read-only; selection happens from the menu
+            readOnly = true,
+            label = { Text(label) },
+            singleLine = true,
+            enabled = enabled,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text( stringResource(option.labelRes)) },
+                    onClick = {
+                        onChange(option)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun Hint(
     state: UiState,
@@ -483,7 +557,8 @@ fun SettingsScreenPreviewOn() {
             onRemoteHostChange = {},
             onRemotePortChange = {},
             onObfuscationKeyChange = {},
-            onEnableToggle = {}
+            onMaskingTypeChange = {},
+            onEnableToggle = {},
         )
     }
 }
@@ -508,7 +583,8 @@ fun SettingsScreenPreviewOff() {
             onRemoteHostChange = {},
             onRemotePortChange = {},
             onObfuscationKeyChange = {},
-            onEnableToggle = {}
+            onMaskingTypeChange = {},
+            onEnableToggle = {},
         )
     }
 }
@@ -533,7 +609,8 @@ fun SettingsScreenPreviewLoading() {
             onRemoteHostChange = {},
             onRemotePortChange = {},
             onObfuscationKeyChange = {},
-            onEnableToggle = {}
+            onMaskingTypeChange = {},
+            onEnableToggle = {},
         )
     }
 }

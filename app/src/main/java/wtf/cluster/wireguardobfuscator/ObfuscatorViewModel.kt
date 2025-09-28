@@ -50,6 +50,11 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
         saveValue(SettingsKeys.OBFUSCATION_KEY, newKey)
     }
 
+    fun onMaskingTypeChange(newMasking: Masking.MaskingType) {
+        _uiState.value = _uiState.value.copy(maskingType = newMasking)
+        saveValue(SettingsKeys.MASKING_TYPE, newMasking.id)
+    }
+
     fun onEnableToggle(enabled: Boolean) {
         _uiState.value = _uiState.value.copy(isRunning = enabled)
         saveValue(SettingsKeys.STARTED, enabled)
@@ -82,6 +87,7 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
             putExtra(SettingsKeys.REMOTE_HOST.toString(), state.remoteHost)
             putExtra(SettingsKeys.REMOTE_PORT.toString(), state.remotePort)
             putExtra(SettingsKeys.OBFUSCATION_KEY.toString(), state.obfuscationKey)
+            putExtra(SettingsKeys.MASKING_TYPE.toString(), state.maskingType.id)
         }
         Log.d(Obfuscator.TAG, "starting service with $intent, listenPost=${state.listenPort}, remoteHost=${state.remoteHost}, remotePort=${state.remotePort}, obfuscationKey=${state.obfuscationKey}")
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -107,6 +113,8 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
             val remoteHost = prefs[SettingsKeys.REMOTE_HOST] ?: context.getString(R.string.default_remote_host)
             val remotePort = prefs[SettingsKeys.REMOTE_PORT] ?: context.getString(R.string.default_remote_port)
             var obfuscationKey = prefs[SettingsKeys.OBFUSCATION_KEY] ?: context.getString(R.string.default_obfuscation_key)
+            val maskingTypeId = prefs[SettingsKeys.MASKING_TYPE] ?: Masking.all()[0].id
+            val maskingType = Masking.findById(maskingTypeId) ?: Masking.all()[0]
             var status = if (!isRunning) context.getString(R.string.status_not_running) else prefs[SettingsKeys.STATUS] ?: ""
             var error = prefs[SettingsKeys.ERROR] ?: ""
 
@@ -116,6 +124,7 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
                 remoteHost = remoteHost,
                 remotePort = remotePort,
                 obfuscationKey = obfuscationKey,
+                maskingType = maskingType,
                 isRunning = isRunning,
                 status = status,
                 error = error,

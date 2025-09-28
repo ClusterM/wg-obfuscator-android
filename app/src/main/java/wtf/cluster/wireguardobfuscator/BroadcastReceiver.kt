@@ -30,12 +30,14 @@ class BootReceiver : BroadcastReceiver() {
                     val remoteHost = prefs[SettingsKeys.REMOTE_HOST] ?: context.getString(R.string.default_remote_host)
                     val remotePort = prefs[SettingsKeys.REMOTE_PORT] ?: context.getString(R.string.default_remote_port)
                     val key = prefs[SettingsKeys.OBFUSCATION_KEY] ?: context.getString(R.string.default_obfuscation_key)
+                    val maskingTypeId = prefs[SettingsKeys.MASKING_TYPE] ?: Masking.all()[0].id
                     // Start service
                     val serviceIntent = Intent(context, ObfuscatorService::class.java).apply {
                         putExtra(SettingsKeys.LISTEN_PORT.toString(), listenPort)
                         putExtra(SettingsKeys.REMOTE_HOST.toString(), remoteHost)
                         putExtra(SettingsKeys.REMOTE_PORT.toString(), remotePort)
                         putExtra(SettingsKeys.OBFUSCATION_KEY.toString(), key)
+                        putExtra(SettingsKeys.MASKING_TYPE.toString(), maskingTypeId)
                     }
                     
                     try {

@@ -25,4 +25,7 @@
     <string name="status_waiting_for_handshake">Ожидаем клиента…</string>
     <string name="status_handshake_sent_waiting_for_response">Ожидаем ответа от сервера…</string>
     <string name="status_handshake_completed">Соединение установлено</string>
+    <string name="masking_none">Без маскинга</string>
+    <string name="masking_type_label">Тип маскинга</string>
+    <string name="masking_type_hint">Протокол, под который маскируемся</string>
 </resources>
