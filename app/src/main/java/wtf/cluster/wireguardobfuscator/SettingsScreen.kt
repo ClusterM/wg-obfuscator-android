@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -48,6 +49,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -433,7 +435,13 @@ private fun NumberFieldBasic(
             keyboardType = KeyboardType.Number,
             imeAction = ImeAction.Next
         ),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.outline,
+            focusedLabelColor = MaterialTheme.colorScheme.outline,
+            cursorColor = MaterialTheme.colorScheme.outline,
+            selectionColors = TextSelectionColors(MaterialTheme.colorScheme.outline, MaterialTheme.colorScheme.primary)
+        )
     )
 }
 
@@ -457,7 +465,13 @@ private fun TextFieldBasic(
             keyboardType = KeyboardType.Ascii,
             imeAction = ImeAction.Next
         ),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.outline,
+            focusedLabelColor = MaterialTheme.colorScheme.outline,
+            cursorColor = MaterialTheme.colorScheme.outline,
+            selectionColors = TextSelectionColors(MaterialTheme.colorScheme.outline, MaterialTheme.colorScheme.primary)
+        )
     )
 }
 
@@ -487,6 +501,10 @@ fun DropdownMasking(
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.outline
+            )
         )
 
         ExposedDropdownMenu(

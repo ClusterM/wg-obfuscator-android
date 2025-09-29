@@ -15,10 +15,11 @@ import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = Color(0xFF141E8A), // switch background, top bar background
-    secondary = Color(0xFF0000FF),
+    secondary = Color(0xFF8080FF),
     background = Color.Black,
     onPrimary = Color(0xFFC0C0FF), // switch, top bar text
     error = Color.Red,
+    outline = Color.White,
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -27,6 +28,7 @@ private val LightColorScheme = lightColorScheme(
     //background = Color.White,
     onPrimary = Color(0xFF141E8A), // switch, top bar text
     error = Color.Red,
+    outline = Color.Black,
 )
 
 @Composable
