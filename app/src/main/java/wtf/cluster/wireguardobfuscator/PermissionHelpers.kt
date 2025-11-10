@@ -39,7 +39,7 @@ class PermissionHelpers() {
             }
             try {
                 if (direct.resolveActivity(pm) != null) {
-                    Log.d(Obfuscator.TAG, "BatteryOpt: direct request")
+                    Log.d(Obfuscator.TAG, context.getString(R.string.battery_opt_direct_request))
                     context.startActivity(direct)
                     return
                 }
@@ -53,7 +53,7 @@ class PermissionHelpers() {
             }
             try {
                 if (list.resolveActivity(pm) != null) {
-                    Log.d(Obfuscator.TAG, "BatteryOpt: list screen")
+                    Log.d(Obfuscator.TAG, context.getString(R.string.battery_opt_list_screen))
                     context.startActivity(list)
                     return
                 }
@@ -66,10 +66,10 @@ class PermissionHelpers() {
                 //addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             try {
-                Log.d(Obfuscator.TAG, "BatteryOpt: app details")
+                Log.d(Obfuscator.TAG, context.getString(R.string.battery_opt_app_details))
                 context.startActivity(details)
             } catch (e: ActivityNotFoundException) {
-                Log.e(Obfuscator.TAG, "BatteryOpt: cannot open any settings", e)
+                Log.e(Obfuscator.TAG, context.getString(R.string.battery_opt_cannot_open_any_settings), e)
             }
         }
 

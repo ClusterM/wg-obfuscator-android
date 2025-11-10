@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import androidx.datastore.preferences.core.edit
+import java.io.StringReader
 
 class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
     private val _uiState = MutableStateFlow(UiState())
@@ -132,6 +133,55 @@ class ObfuscatorViewModel(app: Application) : AndroidViewModel(app) {
 
             if (isRunning) {
                 startObfuscator(context)
+            }
+        }
+    }
+
+    fun parseQrCode(qrCode: String) {
+        // Parse INI-style config manually to avoid Properties escaping issues with special characters
+        val config = mutableMapOf<String, String>()
+        
+        qrCode.lines().forEach { line ->
+            val trimmedLine = line.trim()
+            // Skip empty lines, comments, and section headers
+            if (trimmedLine.isEmpty() || 
+                trimmedLine.startsWith("#") || 
+                trimmedLine.startsWith(";") ||
+                (trimmedLine.startsWith("[") && trimmedLine.endsWith("]"))) {
+                return@forEach
+            }
+            
+            // Parse key = value (find first = and split there)
+            val equalsIndex = trimmedLine.indexOf('=')
+            if (equalsIndex > 0) {
+                val key = trimmedLine.substring(0, equalsIndex).trim()
+                val value = trimmedLine.substring(equalsIndex + 1).trim()
+                config[key] = value
+            }
+        }
+
+        val listenPort = config["source-lport"]
+        val target = config["target"]
+        val key = config["key"]
+        val masking = config["masking"]
+
+        if (listenPort != null) {
+            onListenPortChange(listenPort)
+        }
+        if (target != null) {
+            val parts = target.split(":")
+            if (parts.size == 2) {
+                onRemoteHostChange(parts[0])
+                onRemotePortChange(parts[1])
+            }
+        }
+        if (key != null) {
+            onObfuscationKeyChange(key)
+        }
+        if (masking != null) {
+            val maskingType = Masking.all().find { it.id.equals(masking, ignoreCase = true) }
+            if (maskingType != null) {
+                onMaskingTypeChange(maskingType)
             }
         }
     }
