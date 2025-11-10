@@ -37,6 +37,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Custom Capture activity for ZXing scanner (follows device orientation) -->
+        <activity
+            android:name=".CustomCaptureActivity"
+            android:exported="false"
+            android:theme="@style/Theme.WireguardObfuscator" />
+
         <service
             android:name=".ObfuscatorService"
             android:exported="false"
