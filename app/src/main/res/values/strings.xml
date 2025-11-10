@@ -109,4 +109,5 @@
     <string name="android_tv_autostart_disabled">AndroidTV detected, can\'t autostart, start service again manually</string>
     <string name="cant_start_on_boot">Can\'t start on ACTION_BOOT_COMPLETED (%s)</string>
     <string name="scan_qr">Scan QR</string>
+    <!-- Language selection removed: app follows system locale automatically -->
 </resources>

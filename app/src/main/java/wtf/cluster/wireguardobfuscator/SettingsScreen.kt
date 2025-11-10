@@ -40,10 +40,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -156,6 +160,7 @@ fun MyTopAppBar() {
     val context = LocalContext.current
     val activity = (context as? MainActivity)
     val uiModeManager = context.getSystemService(UI_MODE_SERVICE) as UiModeManager
+    
 
     val (noOptimizationGranted, _) = PermissionHelpers.RememberBatteryOptimizationState()
 
@@ -184,6 +189,7 @@ fun MyTopAppBar() {
                         activity?.launchQrCodeScanner()
                     }
                 )
+                // language selection removed — app uses system locale automatically
                 // Request POST_NOTIFICATIONS (API 33+)
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.allow_notification)) },

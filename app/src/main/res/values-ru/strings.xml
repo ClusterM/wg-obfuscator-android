@@ -34,4 +34,5 @@
     <string name="app_icon">Иконка приложения</string>
     <string name="menu">Меню</string>
     <string name="scan_qr">Сканировать QR</string>
+    <!-- Language selection removed: app follows system locale automatically -->
 </resources>
