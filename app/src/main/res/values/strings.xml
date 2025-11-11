@@ -95,7 +95,7 @@
     <string name="failed_to_build_stun_binding_success_response">Failed to build STUN Binding Success Response</string>
     <string name="received_stun_binding_success_response">Received STUN Binding Success Response from %1$s:%2$s, ignoring</string>
     <string name="failed_to_unwrap_stun_data_indication">Failed to unwrap STUN Data Indication from %1$s:%2$s</string>
-    <string name="unwrapped_stun_data_indication">Unwrapped STUN Data Indication from %1$s:%2$s (%2$d bytes)</string>
+    <string name="unwrapped_stun_data_indication">Unwrapped STUN Data Indication from %1$s:%2$s (%3$d bytes)</string>
     <string name="received_unknown_stun_type">Received unknown STUN type %1$x from %2$s:%3$s, ignoring</string>
     <string name="masking_bytes">Masking %d bytes</string>
     <string name="masking_timer">Masking timer</string>
