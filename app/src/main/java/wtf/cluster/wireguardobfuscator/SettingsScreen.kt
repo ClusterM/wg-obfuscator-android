@@ -40,10 +40,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
@@ -140,7 +144,7 @@ fun SettingsContent(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.logo),
-                        contentDescription = "App Icon",
+                        contentDescription = stringResource(id = R.string.app_icon),
                         modifier = Modifier.fillMaxSize(0.25f)
                     )
                 }
@@ -154,7 +158,9 @@ fun SettingsContent(
 fun MyTopAppBar() {
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val activity = (context as? MainActivity)
     val uiModeManager = context.getSystemService(UI_MODE_SERVICE) as UiModeManager
+    
 
     val (noOptimizationGranted, _) = PermissionHelpers.RememberBatteryOptimizationState()
 
@@ -168,20 +174,29 @@ fun MyTopAppBar() {
             if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
                 return@TopAppBar
             }
+
             IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                Icon(Icons.Default.MoreVert, contentDescription = stringResource(id = R.string.menu))
             }
             DropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false }
             ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.scan_qr)) },
+                    onClick = {
+                        menuExpanded = false
+                        activity?.launchQrCodeScanner()
+                    }
+                )
+                // language selection removed — app uses system locale automatically
                 // Request POST_NOTIFICATIONS (API 33+)
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.allow_notification)) },
                     enabled = true,
                     onClick = {
                         menuExpanded = false
-                        Log.d(Obfuscator.TAG, "Requesting notification permission")
+                        Log.d(Obfuscator.TAG, context.getString(R.string.requesting_notification_permission))
                         val notificationSettingsIntent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                         context.startActivity(notificationSettingsIntent)
@@ -193,7 +208,7 @@ fun MyTopAppBar() {
                     enabled = !noOptimizationGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M,
                     onClick = {
                         menuExpanded = false
-                        Log.d(Obfuscator.TAG, "Requesting ignore battery optimization")
+                        Log.d(Obfuscator.TAG, context.getString(R.string.requesting_ignore_battery_optimization))
                         PermissionHelpers.OpenIgnoreBatteryOptimizationRequest(context)
                     }
                 )
@@ -377,7 +392,7 @@ fun ControlAndStatus(
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = "${stringResource(R.string.status)}: ",
+            text = stringResource(R.string.status_format, stringResource(id = R.string.status)),
             style = MaterialTheme.typography.bodyLarge
         )
         Text(
@@ -393,7 +408,7 @@ fun ControlAndStatus(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "${stringResource(R.string.error)}: ",
+                text = stringResource(id = R.string.error_format_with_colon, stringResource(id = R.string.error)),
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold
                 ),

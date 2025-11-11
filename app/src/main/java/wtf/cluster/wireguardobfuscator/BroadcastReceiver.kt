@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d(Obfuscator.TAG, "received ${intent.action}")
+        Log.d(Obfuscator.TAG, context.getString(R.string.received_action, intent.action))
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             runBlocking {
                 val prefs = context.dataStore.data.first()
@@ -19,7 +19,7 @@ class BootReceiver : BroadcastReceiver() {
                 if (wasRunning) {
                     val uiMode = context.resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
                     if (uiMode == Configuration.UI_MODE_TYPE_TELEVISION) {
-                        Log.w(Obfuscator.TAG, "AndroidTV detected, can't autostart, start service again manually")
+                        Log.w(Obfuscator.TAG, context.getString(R.string.android_tv_autostart_disabled))
                         context.dataStore.edit { prefs ->
                             prefs[SettingsKeys.STARTED] = false
                         }
@@ -47,7 +47,7 @@ class BootReceiver : BroadcastReceiver() {
                             context.startService(serviceIntent);
                         }
                     } catch (e: Exception) {
-                        Log.e(Obfuscator.TAG, "Can't start on ACTION_BOOT_COMPLETED ($e)")
+                        Log.e(Obfuscator.TAG, context.getString(R.string.cant_start_on_boot, e))
                     }
                 }
             }

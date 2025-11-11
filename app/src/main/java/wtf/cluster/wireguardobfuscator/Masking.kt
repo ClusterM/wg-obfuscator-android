@@ -1,12 +1,13 @@
 package wtf.cluster.wireguardobfuscator
 
+import android.content.Context
 import androidx.annotation.StringRes
 
 class Masking {
     data class MaskingType(
         val id: String,                       // stable key for config/DataStore, e.g. "stun"
         @StringRes val labelRes: Int,         // localized label resource
-        val factory: (() -> Masker)? = null   // factory to create Masker; null means "none"
+        val factory: ((Context) -> Masker)? = null   // factory to create Masker; null means "none"
     )
 
     companion object {
@@ -19,7 +20,7 @@ class Masking {
             MaskingType(
                 id = "stun",
                 labelRes = R.string.masking_stun,
-                factory = { MaskerStun() }     // how to create an instance
+                factory = { context -> MaskerStun(context) }     // how to create an instance
             )
         )
 
@@ -28,7 +29,7 @@ class Masking {
         fun findById(id: String): MaskingType? =
             items.firstOrNull { it.id == id }
 
-        fun createMasker(id: String): Masker? =
-            findById(id)?.factory?.invoke()
+        fun createMasker(id: String, context: Context): Masker? =
+            findById(id)?.factory?.invoke(context)
     }
 }

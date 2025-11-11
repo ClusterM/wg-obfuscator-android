@@ -1,31 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="listen_port_label">Порт для прослушивания</string>
-    <string name="listen_port_placeholder">Напр. 13255</string>
-    <string name="listen_port_hint">Локальный UDP порт, куда подключается WG клиент</string>
+    <string name="app_name" translatable="false">WireGuard Обфускатор</string>
+    <string name="listen_port_label">Порт прослушивания</string>
+    <string name="listen_port_placeholder">Напр., 13255</string>
+    <string name="listen_port_hint">Локальный UDP-порт, куда подключается клиент WG</string>
     <string name="remote_host_label">Хост назначения</string>
     <string name="remote_host_placeholder">example.com или 1.2.3.4</string>
     <string name="remote_host_hint">Адрес удалённого обфускатора</string>
     <string name="remote_port_label">Порт назначения</string>
-    <string name="remote_port_placeholder">Напр. 13249</string>
-    <string name="remote_port_hint">UDP порт удалённого обфускатора</string>
+    <string name="remote_port_placeholder">Напр., 13249</string>
+    <string name="remote_port_hint">UDP-порт удалённого обфускатора</string>
     <string name="obfuscation_key_label">Ключ обфускации</string>
     <string name="obfuscation_key_placeholder">любой текст</string>
     <string name="obfuscation_key_hint">Должен совпадать с ключом на сервере</string>
-    <string name="status">Состояние</string>
+    <string name="status">Статус</string>
     <string name="enable_obfuscator">Включить обфускатор</string>
     <string name="error">Ошибка</string>
     <string name="status_not_running">Обфускатор не запущен</string>
     <string name="status_obfuscator_started">Обфускатор запущен</string>
-    <string name="status_obfuscator_stopped">Обфускатор не запущен</string>
-    <string name="status_starting">Запускаемся…</string>
-    <string name="allow_notification">Включить/выключить уведомление</string>
-    <string name="allow_disable_battery_optimization">Отключить оптимизацию расхода батареи</string>
-    <string name="notification_channel_name">Состояние</string>
-    <string name="status_waiting_for_handshake">Ожидаем клиента…</string>
-    <string name="status_handshake_sent_waiting_for_response">Ожидаем ответа от сервера…</string>
-    <string name="status_handshake_completed">Соединение установлено</string>
-    <string name="masking_none">Без маскинга</string>
-    <string name="masking_type_label">Тип маскинга</string>
+    <string name="status_obfuscator_stopped">Обфускатор остановлен</string>
+    <string name="status_starting">Запуск…</string>
+    <string name="allow_notification">Разрешить уведомления</string>
+    <string name="allow_disable_battery_optimization">Отключить оптимизацию батареи</string>
+    <string name="notification_channel_name">Статус</string>
+    <string name="status_waiting_for_handshake">Ожидание клиента...</string>
+    <string name="status_handshake_sent_waiting_for_response">Ожидание сервера...</string>
+    <string name="status_handshake_completed">Подключено</string>
+    <string name="masking_none">Без маскировки</string>
+    <string name="masking_type_label">Тип маскировки</string>
     <string name="masking_type_hint">Протокол, под который маскируемся</string>
+    <string name="main_activity_on_create">MainActivity onCreate</string>
+    <string name="main_activity_on_destroy">MainActivity onDestroy</string>
+    <string name="app_icon">Иконка приложения</string>
+    <string name="menu">Меню</string>
+    <string name="scan_qr">Сканировать QR</string>
+    <!-- Language selection removed: app follows system locale automatically -->
 </resources>

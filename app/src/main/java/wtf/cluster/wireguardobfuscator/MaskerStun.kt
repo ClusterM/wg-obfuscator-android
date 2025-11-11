@@ -1,16 +1,13 @@
 package wtf.cluster.wireguardobfuscator
 
+import android.content.Context
 import android.util.Log
 import wtf.cluster.wireguardobfuscator.ObfuscatorService.PacketDirection
-import java.net.DatagramSocket
 import java.net.InetAddress
-import java.net.InetSocketAddress
 import java.security.SecureRandom
-import kotlin.math.min
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-class MaskerStun : Masker {
+class MaskerStun(private val context: Context) : Masker {
     companion object {
         /* =======================
          * STUN constants
@@ -50,23 +47,23 @@ class MaskerStun : Masker {
 
     // Write unsigned 16-bit int in big-endian
     private fun u16be(value: Int, dst: ByteArray, off: Int) {
-        dst[off]   = ((value ushr 8) and 0xFF).toByte()
-        dst[off+1] = (value and 0xFF).toByte()
+        dst[off] = ((value ushr 8) and 0xFF).toByte()
+        dst[off + 1] = (value and 0xFF).toByte()
     }
 
     // Read unsigned 16-bit int in big-endian
     private fun ru16be(src: ByteArray, off: Int): Int {
         val b0 = src[off].toInt() and 0xFF
-        val b1 = src[off+1].toInt() and 0xFF
+        val b1 = src[off + 1].toInt() and 0xFF
         return (b0 shl 8) or b1
     }
 
     // Write unsigned 32-bit int in big-endian
     private fun u32be(value: Int, dst: ByteArray, off: Int) {
-        dst[off]   = ((value ushr 24) and 0xFF).toByte()
-        dst[off+1] = ((value ushr 16) and 0xFF).toByte()
-        dst[off+2] = ((value ushr 8) and 0xFF).toByte()
-        dst[off+3] = (value and 0xFF).toByte()
+        dst[off] = ((value ushr 24) and 0xFF).toByte()
+        dst[off + 1] = ((value ushr 16) and 0xFF).toByte()
+        dst[off + 2] = ((value ushr 8) and 0xFF).toByte()
+        dst[off + 3] = (value and 0xFF).toByte()
     }
 
     // memcpy equivalent
@@ -87,9 +84,9 @@ class MaskerStun : Masker {
     fun stun_check_magic(buf: ByteArray?, len: Int): Boolean {
         if (buf == null || len < 8) return false
         return buf[4] == COOKIE_BE[0] &&
-            buf[5] == COOKIE_BE[1] &&
-            buf[6] == COOKIE_BE[2] &&
-            buf[7] == COOKIE_BE[3]
+                buf[5] == COOKIE_BE[1] &&
+                buf[6] == COOKIE_BE[2] &&
+                buf[7] == COOKIE_BE[3]
     }
 
     // Peek message type (16-bit big-endian at buf[0..1])
@@ -115,7 +112,7 @@ class MaskerStun : Masker {
     fun stun_attr_xor_mapped_addr(b: ByteArray, off: Int, address: InetAddress, port: Int): Int {
         // type,len
         u16be(STUN_ATTR_XORMAPPED, b, off + 0)
-        u16be(8,                     b, off + 2) // value = family(2) + port(2) + addr(4)
+        u16be(8, b, off + 2) // value = family(2) + port(2) + addr(4)
         b[off + 4] = 0
         b[off + 5] = 0x01 // IPv4
 
@@ -127,9 +124,9 @@ class MaskerStun : Masker {
 
         // IPv4 address bytes XOR with cookie
         val ip = address.address
-        require(ip.size == 4) { "IPv4 required" }
-        b[off + 8]  = (ip[0].toInt() xor (COOKIE_BE[0].toInt() and 0xFF)).toByte()
-        b[off + 9]  = (ip[1].toInt() xor (COOKIE_BE[1].toInt() and 0xFF)).toByte()
+        require(ip.size == 4) { context.getString(R.string.ipv4_required) }
+        b[off + 8] = (ip[0].toInt() xor (COOKIE_BE[0].toInt() and 0xFF)).toByte()
+        b[off + 9] = (ip[1].toInt() xor (COOKIE_BE[1].toInt() and 0xFF)).toByte()
         b[off + 10] = (ip[2].toInt() xor (COOKIE_BE[2].toInt() and 0xFF)).toByte()
         b[off + 11] = (ip[3].toInt() xor (COOKIE_BE[3].toInt() and 0xFF)).toByte()
 
@@ -232,7 +229,7 @@ class MaskerStun : Masker {
         val headerSize = 20
         val attrHeader = 4
         val totalAdd = headerSize + attrHeader
-        if (data_len + totalAdd > min(buf.size, BUFFER_SIZE)) {
+        if (data_len + totalAdd > kotlin.math.min(buf.size, BUFFER_SIZE)) {
             // mimic -ENOMEM
             return -12
         }
@@ -248,7 +245,7 @@ class MaskerStun : Masker {
         // write DATA attr header
         val mlen = headerSize
         u16be(STUN_ATTR_DATA, buf, mlen + 0)
-        u16be(data_len,       buf, mlen + 2)
+        u16be(data_len, buf, mlen + 2)
 
         return headerSize + attrHeader + data_len
     }
@@ -276,9 +273,9 @@ class MaskerStun : Masker {
         return dataLen
     }
 
-    override fun onHandshakeRequest(direction: PacketDirection,
-                           srcAddr: InetAddress, srcPort: Int, dstAddr: InetAddress, dstPort: Int,
-                           sendBackCallback: (ByteArray, Int) -> Int, sendForwardCallback: (ByteArray, Int) -> Int
+    override fun onHandshakeRequest(
+        direction: PacketDirection, srcAddr: InetAddress, srcPort: Int, dstAddr: InetAddress, dstPort: Int,
+        sendBackCallback: (ByteArray, Int) -> Int, sendForwardCallback: (ByteArray, Int) -> Int
     ): Int {
         val buffer = ByteArray(128)
         val len = stun_build_binding_request(buffer)
@@ -286,19 +283,19 @@ class MaskerStun : Masker {
         val sent = sendForwardCallback(buffer, len)
 
         if (sent < 0) {
-            Log.e(Obfuscator.TAG, "Can't send STUN binding request to ${dstAddr.hostAddress}:$dstPort")
+            Log.e(Obfuscator.TAG, context.getString(R.string.cant_send_stun_binding_request, dstAddr.hostAddress, dstPort))
         } else if (sent != len) {
-            Log.w(Obfuscator.TAG, "Partial send of STUN binding request to ${dstAddr.hostAddress}:$dstPort} ($sent of $len bytes)")
+            Log.w(Obfuscator.TAG, context.getString(R.string.partial_send_of_stun_binding_request, dstAddr.hostAddress, dstPort, sent, len))
         } else {
-            Log.d(Obfuscator.TAG, "Sent STUN binding request ($len bytes) to ${dstAddr.hostAddress}:$dstPort")
+            Log.d(Obfuscator.TAG, context.getString(R.string.sent_stun_binding_request, len, dstAddr.hostAddress, dstPort))
         }
 
         return 0
     }
 
-    override fun onDataUnwrap(data: ByteArray, length: Int,
-                     srcAddr: InetAddress, srcPort: Int, dstAddr: InetAddress, dstPort: Int,
-                     sendBackCallback: (ByteArray, Int) -> Int, sendForwardCallback: (ByteArray, Int) -> Int
+    override fun onDataUnwrap(
+        data: ByteArray, length: Int, srcAddr: InetAddress, srcPort: Int, dstAddr: InetAddress, dstPort: Int,
+        sendBackCallback: (ByteArray, Int) -> Int, sendForwardCallback: (ByteArray, Int) -> Int
     ): Int {
         if (!this.stun_check_magic(data, length)) return -1
 
@@ -306,14 +303,14 @@ class MaskerStun : Masker {
         when (stunType) {
             STUN_BINDING_REQ -> {
                 // Received STUN Binding Request from client, send Binding Success Response
-                Log.d(Obfuscator.TAG, "Received STUN Binding Request from ${srcAddr.hostAddress}:$srcPort")
+                Log.d(Obfuscator.TAG, context.getString(R.string.received_stun_binding_request, srcAddr.hostAddress, srcPort))
 
                 // extract txid (12 bytes at offset 8..19)
                 val txid = ByteArray(12)
                 if (data.size >= 20) {
                     System.arraycopy(data, 8, txid, 0, 12)
                 } else {
-                    Log.e(Obfuscator.TAG, "Packet too small to contain TXID")
+                    Log.e(Obfuscator.TAG, context.getString(R.string.packet_too_small_to_contain_txid))
                     return -1
                 }
 
@@ -323,29 +320,29 @@ class MaskerStun : Masker {
                     val sent = try {
                         sendBackCallback(data, respLen)
                     } catch (e: Exception) {
-                        Log.e(Obfuscator.TAG, "sendBackCallback threw: ${e.message}", e)
+                        Log.e(Obfuscator.TAG, context.getString(R.string.send_back_callback_threw, e.message), e)
                         return -1
                     }
 
                     if (sent < 0) {
-                        Log.e(Obfuscator.TAG, "sendto STUN response to ${srcAddr.hostAddress}:$srcPort failed")
+                        Log.e(Obfuscator.TAG, context.getString(R.string.sendto_stun_response_failed, srcAddr.hostAddress, srcPort))
                     } else if (sent != respLen) {
                         Log.w(
                             Obfuscator.TAG,
-                            "Partial send of STUN Binding Success Response to ${srcAddr.hostAddress}:$srcPort ($sent of $respLen bytes)"
+                            context.getString(R.string.partial_send_of_stun_binding_success_response, srcAddr.hostAddress, srcPort, sent, respLen)
                         )
                     } else {
-                        Log.d(Obfuscator.TAG, "Sent STUN Binding Success Response ($respLen bytes) to ${srcAddr.hostAddress}:$srcPort")
+                        Log.d(Obfuscator.TAG, context.getString(R.string.sent_stun_binding_success_response, respLen, srcAddr.hostAddress, srcPort))
                     }
                 } else {
-                    Log.e(Obfuscator.TAG, "Failed to build STUN Binding Success Response")
+                    Log.e(Obfuscator.TAG, context.getString(R.string.failed_to_build_stun_binding_success_response))
                 }
                 return 0
             }
 
             STUN_BINDING_RESP -> {
                 // Received a Binding Success Response — ignore
-                Log.d(Obfuscator.TAG, "Received STUN Binding Success Response from ${srcAddr.hostAddress}:$srcPort, ignoring")
+                Log.d(Obfuscator.TAG, context.getString(R.string.received_stun_binding_success_response, srcAddr.hostAddress, srcPort))
                 return 0
             }
 
@@ -353,37 +350,37 @@ class MaskerStun : Masker {
                 // Unwrap the STUN Data Indication and return inner payload length (or negative on error)
                 val unwrappedLen = stun_unwrap(data, length)
                 if (unwrappedLen < 0) {
-                    Log.d(Obfuscator.TAG, "Failed to unwrap STUN Data Indication from ${srcAddr.hostAddress}:$srcPort")
+                    Log.d(Obfuscator.TAG, context.getString(R.string.failed_to_unwrap_stun_data_indication, srcAddr.hostAddress, srcPort))
                     return unwrappedLen
                 }
-                Log.d(Obfuscator.TAG, "Unwrapped STUN Data Indication from ${srcAddr.hostAddress}:$srcPort ($unwrappedLen bytes)")
+                Log.d(Obfuscator.TAG, context.getString(R.string.unwrapped_stun_data_indication, srcAddr.hostAddress, srcPort, unwrappedLen))
                 return unwrappedLen
             }
 
             else -> {
-                Log.d(Obfuscator.TAG, "Received unknown STUN type %04X from ${srcAddr.hostAddress}:$srcPort, ignoring".format(stunType))
+                Log.d(Obfuscator.TAG, context.getString(R.string.received_unknown_stun_type, stunType, srcAddr.hostAddress, srcPort))
                 return 0
             }
         }
     }
 
-    override fun onDataWrap(data: ByteArray, length: Int,
-                     srcAddr: InetAddress, srcPort: Int, dstAddr: InetAddress, dstPort: Int,
-                     sendBackCallback: (ByteArray, Int) -> Int, sendForwardCallback: (ByteArray, Int) -> Int
+    override fun onDataWrap(
+        data: ByteArray, length: Int, srcAddr: InetAddress, srcPort: Int, dstAddr: InetAddress, dstPort: Int,
+        sendBackCallback: (ByteArray, Int) -> Int, sendForwardCallback: (ByteArray, Int) -> Int
     ): Int {
-        Log.d(Obfuscator.TAG, "Masking $length bytes");
+        Log.d(Obfuscator.TAG, context.getString(R.string.masking_bytes, length))
         return stun_wrap(data, length)
     }
 
     override fun onTimer(
         clientAddr: InetAddress, clientPort: Int, serverAddr: InetAddress, serverPort: Int,
-                   sendToClientCallback: (ByteArray, Int) -> Int, sendToServerCallback: (ByteArray, Int) -> Int
+        sendToClientCallback: (ByteArray, Int) -> Int, sendToServerCallback: (ByteArray, Int) -> Int
     ) {
         val buffer = ByteArray(128)
         val len = stun_build_binding_request(buffer)
         if (len < 0) return
 
-        Log.d(Obfuscator.TAG, "Masking timer");
+        Log.d(Obfuscator.TAG, context.getString(R.string.masking_timer))
         sendToServerCallback(buffer, len)
     }
 }

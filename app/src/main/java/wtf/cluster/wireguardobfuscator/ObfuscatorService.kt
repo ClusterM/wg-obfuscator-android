@@ -41,20 +41,20 @@ class ObfuscatorService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(Obfuscator.TAG, "service, onCreate")
+        Log.d(Obfuscator.TAG, getString(R.string.service_on_create))
         createNotificationChannel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(Obfuscator.TAG, "service, onStartCommand")
+        Log.d(Obfuscator.TAG, getString(R.string.service_on_start_command))
 
         if (started) {
-            Log.d(Obfuscator.TAG, "already running, exit")
+            Log.d(Obfuscator.TAG, getString(R.string.already_running_exit))
             return START_STICKY
         }
 
         try {
-            Log.d(Obfuscator.TAG, "service, calling startForeground...")
+            Log.d(Obfuscator.TAG, getString(R.string.service_calling_start_foreground))
             val notification = createNotification(getString(R.string.status_starting))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(
@@ -65,25 +65,25 @@ class ObfuscatorService : Service() {
             } else {
                 startForeground(notificationId, notification)
             }
-            Log.d(Obfuscator.TAG, "service, startForeground called")
+            Log.d(Obfuscator.TAG, getString(R.string.service_start_foreground_called))
 
             started = true
             setError(null)
 
             val listenPort = intent?.getStringExtra(SettingsKeys.LISTEN_PORT.toString())?.toIntOrNull()
-                ?: throw Exception("Port to listen not specified")
+                ?: throw Exception(getString(R.string.port_to_listen_not_specified))
             val remoteHost = intent.getStringExtra(SettingsKeys.REMOTE_HOST.toString())
-                ?: throw Exception("Target hostname not specified")
+                ?: throw Exception(getString(R.string.target_hostname_not_specified))
             val remotePort = intent.getStringExtra(SettingsKeys.REMOTE_PORT.toString())?.toIntOrNull()
-                ?: throw Exception("Target port not specified")
+                ?: throw Exception(getString(R.string.target_port_not_specified))
             val keyStr = intent.getStringExtra(SettingsKeys.OBFUSCATION_KEY.toString())
-                ?: throw Exception("Obfuscation key not specified")
+                ?: throw Exception(getString(R.string.obfuscation_key_not_specified))
             val key = keyStr.toByteArray(Charsets.UTF_8)
             val maskerTypeId = intent.getStringExtra(SettingsKeys.MASKING_TYPE.toString()) ?: Masking.all()[0].id
 
             stop() // in case if already running
             proxyJob = CoroutineScope(Dispatchers.IO).launch {
-                Log.d(Obfuscator.TAG, "service, starting runProxy")
+                Log.d(Obfuscator.TAG, getString(R.string.service_starting_run_proxy))
                 runProxy(listenPort, remoteHost, remotePort, key, maskerTypeId)
             }
         } catch (e: Exception) {
@@ -94,7 +94,7 @@ class ObfuscatorService : Service() {
     }
 
     override fun onDestroy() {
-        Log.d(Obfuscator.TAG, "service, onDestroy")
+        Log.d(Obfuscator.TAG, getString(R.string.service_on_destroy))
         started = false
         stop()
         CoroutineScope(Dispatchers.IO).launch {
@@ -110,7 +110,7 @@ class ObfuscatorService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.d(Obfuscator.TAG, "createNotificationChannel")
+            Log.d(Obfuscator.TAG, getString(R.string.create_notification_channel))
             val channel = NotificationChannel(
                 channelId,
                 getString(R.string.notification_channel_name),
@@ -138,21 +138,21 @@ class ObfuscatorService : Service() {
     }
 
     private suspend fun runProxy(listenPort: Int, remoteHost: String, remotePort: Int, key: ByteArray, maskerTypeId: String) = coroutineScope {
-        Log.d(Obfuscator.TAG, "service, runProxy")
+        Log.d(Obfuscator.TAG, getString(R.string.service_run_proxy))
         try {
             listenSocket = DatagramSocket(InetSocketAddress(InetAddress.getByName("127.0.0.1"), listenPort))
             remoteSocket = DatagramSocket()
             val remoteAddress = InetAddress.getByName(remoteHost)
             var clientAddress: InetAddress? = null
             var clientPort: Int? = null
-            val obfuscator = Obfuscator(key)
+            val obfuscator = Obfuscator(key, this@ObfuscatorService)
             var handshakeSent = false
             var handshakeResponded = false
             var tx: Long = 0
             var rx: Long = 0
             var masker: Masker? = null
 
-            masker = Masking.createMasker(maskerTypeId)
+            masker = Masking.createMasker(maskerTypeId, this@ObfuscatorService)
 
             fun updateStatusWithStats() {
                 if (!handshakeSent) {
@@ -163,18 +163,18 @@ class ObfuscatorService : Service() {
                 } else {
                     @SuppressLint("DefaultLocale")
                     fun formatBytes(bytes: Long): String {
-                        val units = arrayOf("B", "KiB", "MiB", "GiB", "TiB")
+                        val units = arrayOf(getString(R.string.byte_unit_b), getString(R.string.byte_unit_kib), getString(R.string.byte_unit_mib), getString(R.string.byte_unit_gib), getString(R.string.byte_unit_tib))
                         var value = bytes.toDouble()
                         var unitIndex = 0
                         while (value >= 1024 && unitIndex < units.size - 1) {
                             value /= 1024
                             unitIndex++
                         }
-                        return String.format("%.2f %s", value, units[unitIndex])
+                        return String.format(getString(R.string.byte_format), value, units[unitIndex])
                     }
                     val txStr = formatBytes(tx)
                     val rxStr = formatBytes(rx)
-                    setStatus(getString(R.string.status_handshake_completed), "TX: $txStr\nRX: $rxStr")
+                    setStatus(getString(R.string.status_handshake_completed), getString(R.string.tx_rx_format, txStr, rxStr))
                 }
             }
 
@@ -200,7 +200,7 @@ class ObfuscatorService : Service() {
 
             // Listen for client
             launch {
-                Log.d(Obfuscator.TAG, "Client thread started")
+                Log.d(Obfuscator.TAG, getString(R.string.client_thread_started))
                 val buffer = ByteArray(65535)
 
                 while (isActive) {
@@ -209,19 +209,19 @@ class ObfuscatorService : Service() {
                         listenSocket!!.receive(packet)
                         //Log.d(Obfuscator.TAG, "Received " + packet.length + " from client ${packet.address}:${packet.port}")
                         if (packet.length < 4) {
-                            Log.w(Obfuscator.TAG, "Received packet from ${packet.address}:${packet.port} is too short: ${packet.length}")
+                            Log.w(Obfuscator.TAG, getString(R.string.packet_from_too_short, packet.address, packet.port, packet.length))
                             continue
                         }
                         val packetType = Obfuscator.wgType(packet.data)
                         if (packetType !in Obfuscator.WG_TYPE_HANDSHAKE..Obfuscator.WG_TYPE_DATA) {
-                            Log.w(Obfuscator.TAG, "Received unknown packet from ${packet.address}:${packet.port}, type: $packetType")
+                            Log.w(Obfuscator.TAG, getString(R.string.unknown_packet_from, packet.address, packet.port, packetType))
                             continue
                         }
                         // Obfuscation
                         packet.length = obfuscator.encode(packet.data, packet.length)
                         // Update client's port if need
                         if (clientAddress != packet.address || clientPort != packet.port) {
-                            Log.i(Obfuscator.TAG, "Client address/port updated to ${packet.address}:${packet.port}")
+                            Log.i(Obfuscator.TAG, getString(R.string.client_address_updated, packet.address, packet.port))
                             clientAddress = packet.address
                             clientPort = packet.port
                             handshakeSent = false
@@ -233,8 +233,8 @@ class ObfuscatorService : Service() {
                             if (packetType == Obfuscator.WG_TYPE_HANDSHAKE) {
                                 masker.onHandshakeRequest(
                                     PacketDirection.ClientToServer,
-                                    clientAddress,
-                                    clientPort,
+                                    clientAddress!!,
+                                    clientPort!!,
                                     remoteAddress,
                                     remotePort,
                                     ::sendToClient,
@@ -242,7 +242,7 @@ class ObfuscatorService : Service() {
                                 )
                             }
 
-                            packet.length = masker.onDataWrap(packet.data, packet.length, clientAddress, clientPort, remoteAddress, remotePort, ::sendToClient, ::sendToServer)
+                            packet.length = masker.onDataWrap(packet.data, packet.length, clientAddress!!, clientPort!!, remoteAddress, remotePort, ::sendToClient, ::sendToServer)
                         }
 
                         // Send to server
@@ -250,12 +250,12 @@ class ObfuscatorService : Service() {
                         //Log.d(Obfuscator.TAG, "Sent " + packet.length + " to server ${remoteAddress}:${remotePort}")
                         if (packetType == Obfuscator.WG_TYPE_HANDSHAKE && !handshakeSent) {
                             handshakeSent = true
-                            Log.d(Obfuscator.TAG, "Sent handshake to server ${remoteAddress}:${remotePort}")
+                            Log.d(Obfuscator.TAG, getString(R.string.sent_handshake_to_server, remoteAddress, remotePort))
                             updateStatusWithStats()
                         }
                     } catch (e: java.net.SocketException) {
                         if (!isActive) {
-                            Log.d(Obfuscator.TAG, "Stopping client thread")
+                            Log.d(Obfuscator.TAG, getString(R.string.stopping_client_thread))
                         } else {
                             error(e)
                         }
@@ -263,12 +263,12 @@ class ObfuscatorService : Service() {
                         error(e)
                     }
                 }
-                Log.d(Obfuscator.TAG, "Client thread stopped")
+                Log.d(Obfuscator.TAG, getString(R.string.client_thread_stopped))
             }
 
             // Listen for server
             launch {
-                Log.d(Obfuscator.TAG, "Server thread started")
+                Log.d(Obfuscator.TAG, getString(R.string.server_thread_started))
                 val buffer = ByteArray(65535)
 
                 while (isActive) {
@@ -277,42 +277,42 @@ class ObfuscatorService : Service() {
                         remoteSocket!!.receive(respPacket)
                         //Log.d(Obfuscator.TAG, "Received ${respPacket.length} from server ${respPacket.address}:${respPacket.port}")
                         if (respPacket.address != remoteAddress || respPacket.port != remotePort) {
-                            Log.w(Obfuscator.TAG, "Received packet from unexpected server ${respPacket.address}:${respPacket.port}, dropping")
+                            Log.w(Obfuscator.TAG, getString(R.string.unexpected_server_packet, respPacket.address, respPacket.port))
                             continue
                         }
                         if (clientAddress == null || clientPort == null) {
                             // Nearly impossible case, but who knows
-                            Log.w(Obfuscator.TAG, "Client address/port not known yet, dropping packet")
+                            Log.w(Obfuscator.TAG, getString(R.string.client_address_not_known))
                             continue
                         }
                         rx += respPacket.length
                         // Masking
                         if (masker != null) {
-                            respPacket.length = masker.onDataUnwrap(respPacket.data, respPacket.length, remoteAddress, remotePort, clientAddress, clientPort, ::sendToServer, ::sendToClient)
+                            respPacket.length = masker.onDataUnwrap(respPacket.data, respPacket.length, remoteAddress, remotePort, clientAddress!!, clientPort!!, ::sendToServer, ::sendToClient)
                             if (respPacket.length <= 0) {
                                 // Nothing to do
                                 continue
                             }
                         }
                         if (respPacket.length < 4) {
-                            Log.w(Obfuscator.TAG, "Received packet from ${respPacket.address}:${respPacket.port} is too short: ${respPacket.length}")
+                            Log.w(Obfuscator.TAG, getString(R.string.packet_from_server_too_short, respPacket.address, respPacket.port, respPacket.length))
                             continue
                         }
                         // Deobfuscation
                         val newLength = obfuscator.decode(respPacket.data, respPacket.length)
                         if (newLength < 4) {
-                            Log.w(Obfuscator.TAG, "Failed to decode packet from ${respPacket.address}:${respPacket.port}, (original_length=${respPacket.length}, decoded_length=$newLength)")
+                            Log.w(Obfuscator.TAG, getString(R.string.failed_to_decode_packet, respPacket.address, respPacket.port, respPacket.length, newLength))
                             continue
                         }
                         respPacket.length = newLength
                         val packetType = Obfuscator.wgType(respPacket.data)
                         if (packetType !in Obfuscator.WG_TYPE_HANDSHAKE..Obfuscator.WG_TYPE_DATA) {
-                            Log.w(Obfuscator.TAG, "Decoded unknown packet from ${respPacket.address}:${respPacket.port}, type: $packetType")
+                            Log.w(Obfuscator.TAG, getString(R.string.decoded_unknown_packet, respPacket.address, respPacket.port, packetType))
                             continue
                         }
                         if (packetType == Obfuscator.WG_TYPE_HANDSHAKE_RESP && !handshakeResponded && handshakeSent) {
                             handshakeResponded = true
-                            Log.d(Obfuscator.TAG, "Received handshake response from server ${respPacket.address}:${respPacket.port}")
+                            Log.d(Obfuscator.TAG, getString(R.string.received_handshake_from_server, respPacket.address, respPacket.port))
                             updateStatusWithStats()
                         }
                         // Sending back
@@ -320,7 +320,7 @@ class ObfuscatorService : Service() {
                         //Log.d(Obfuscator.TAG, "Sent " + respPacket.length + " to client ${clientAddress}:${clientPort}")
                     } catch (e: java.net.SocketException) {
                         if (!isActive) {
-                            Log.d(Obfuscator.TAG, "Stopping server thread")
+                            Log.d(Obfuscator.TAG, getString(R.string.stopping_server_thread))
                         } else {
                             error(e)
                         }
@@ -328,7 +328,7 @@ class ObfuscatorService : Service() {
                         error(e)
                     }
                 }
-                Log.d(Obfuscator.TAG, "Server thread stopped")
+                Log.d(Obfuscator.TAG, getString(R.string.server_thread_stopped))
             }
 
             // Update status
@@ -351,8 +351,8 @@ class ObfuscatorService : Service() {
                         if (clientAddress != null && clientPort != null) {
                             try {
                                 masker.onTimer(
-                                    clientAddress,
-                                    clientPort,
+                                    clientAddress!!,
+                                    clientPort!!,
                                     remoteAddress,
                                     remotePort,
                                     ::sendToClient,
@@ -361,21 +361,21 @@ class ObfuscatorService : Service() {
                             } catch (_: CancellationException) {
                                 break
                             } catch (e: Exception) {
-                                Log.e(Obfuscator.TAG, "Masking timer error: " + e.printStackTrace())
+                                Log.e(Obfuscator.TAG, getString(R.string.masking_timer_error), e)
                             }
                         }
                     }
                 }
             }
         } catch (_: CancellationException) {
-            Log.d(Obfuscator.TAG, "runProxy: cancelled")
+            Log.d(Obfuscator.TAG, getString(R.string.run_proxy_cancelled))
         } catch (e: Exception) {
             error(e)
         }
     }
 
     private fun stop() {
-        Log.d(Obfuscator.TAG, "service, stop")
+        Log.d(Obfuscator.TAG, getString(R.string.service_stop))
         proxyJob?.cancel()
         proxyJob = null
         listenSocket?.close()
@@ -384,13 +384,13 @@ class ObfuscatorService : Service() {
 
     private fun error(e: Exception) {
         setError(e.message)
-        Log.e(Obfuscator.TAG, "Error: " + e.printStackTrace())
+        Log.e(Obfuscator.TAG, getString(R.string.error_format), e)
         stop()
         stopSelf()
     }
 
     private fun setStatus(status: String, subStatus: String? = null) {
-        Log.d(Obfuscator.TAG, "service, setStatus: $status ($subStatus)")
+        Log.d(Obfuscator.TAG, getString(R.string.service_set_status, status, subStatus ?: ""))
         if (started) {
             val notification = createNotification(status, subStatus)
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -404,7 +404,7 @@ class ObfuscatorService : Service() {
     }
 
     private fun setError(error: String?) {
-        Log.d(Obfuscator.TAG, "service, setError: $error")
+        Log.d(Obfuscator.TAG, getString(R.string.service_set_error, error ?: ""))
         CoroutineScope(Dispatchers.IO).launch {
             dataStore.edit { prefs ->
                 prefs[SettingsKeys.ERROR] = error ?: ""

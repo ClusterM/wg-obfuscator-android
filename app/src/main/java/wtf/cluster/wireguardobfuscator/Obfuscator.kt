@@ -1,12 +1,15 @@
 package wtf.cluster.wireguardobfuscator
 
+import android.content.Context
+import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.experimental.xor
 import kotlin.random.Random
 
 class Obfuscator(
-    var key: ByteArray
+    var key: ByteArray,
+    private val context: Context
 ) {
     val version = 1
 
@@ -37,11 +40,13 @@ class Obfuscator(
     fun xorData(buffer: ByteArray, length: Int, key: ByteArray) {
         val keyLength = key.size
 
-        if (keyLength <= 0) throw Exception("Key length is $keyLength")
-
+        if (keyLength <= 0) throw Exception(context.getString(R.string.key_length_is) + keyLength)
+        
         var crc: Byte = 0
         for (i in 0 until length) {
-            var inbyte: Byte = (key[i % keyLength] + length + keyLength).toByte()
+            // Convert key byte to unsigned (0-255) to match C behavior
+            val keyByte = key[i % keyLength].toInt() and 0xFF
+            var inbyte: Byte = (keyByte + length + keyLength).toByte()
             for (j in 0 until 8) {
                 val mix = ((crc.toInt() and 0xFF) xor (inbyte.toInt() and 0xFF)) and 0x01
                 crc = ((crc.toInt() and 0xFF) shr 1).toByte()
